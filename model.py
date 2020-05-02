@@ -6,20 +6,22 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout, TimeDistributed, Conv1
 from readInput import prepare_dataset, load_files_heracleia, load_files_object_size
 from utils import createDir
 
-conv = True
+conv = False
+summary = True
+
+train_timesteps = 4
+test_timesteps = 4
 
 fold = 5
 
-n_length = 10
+n_length = 1
 filters_num = 20
 kernel_size = 2
 pooling_size = 2
 rnn_hidden_size = 100
 dense_hidden_size = 100
 
-n_timesteps = 10
-
-verbose, epochs, batch_size = 0, 100, 100
+verbose, epochs, batch_size = 0, 1500, 100
 
 
 # Define a simple sequential model
@@ -37,8 +39,8 @@ def create_model(n_outputs, n_features, n_length):
         model.add(TimeDistributed(Flatten()))
         model.add(LSTM(rnn_hidden_size))
     else:
-        model.add(LSTM(rnn_hidden_size, return_sequences=True, input_shape=(n_timesteps, n_features)))
-    # model.add(LSTM(rnn_hidden_size))
+        model.add(LSTM(rnn_hidden_size, return_sequences=True, input_shape=(None, n_features)))
+        model.add(LSTM(rnn_hidden_size))
     model.add(Dropout(0.5))
     model.add(Dense(dense_hidden_size, activation='relu'))
     model.add(Dense(n_outputs, activation='softmax'))
@@ -49,15 +51,17 @@ def create_model(n_outputs, n_features, n_length):
 
 def train_model(train_x, train_y, checkpoint_path=None):
     n_timesteps, n_features, n_outputs = train_x.shape[1], train_x.shape[2], train_y.shape[1]
-
+    train_x = train_x[:, :train_timesteps, :]
     # reshape data into time steps of sub-sequences
-    n_steps = train_x.shape[1] / n_length
-    train_x = train_x.reshape((train_x.shape[0], int(n_steps), n_length, train_x.shape[2]))
-    # testX = test_x.reshape((test_x.shape[0], int(n_steps), n_length, trainX.shape[2]))
+    if conv:
+        n_steps = train_x.shape[1] / n_length
+        train_x = train_x.reshape((train_x.shape[0], int(n_steps), n_length, train_x.shape[2]))
+        # testX = test_x.reshape((test_x.shape[0], int(n_steps), n_length, trainX.shape[2]))
 
     model = create_model(n_outputs, n_features, n_length)
     # Display the model's architecture
-    model.summary()
+    if summary:
+        model.summary()
 
     if os.path.exists(checkpoint_path + ".index"):
         model.load_weights(checkpoint_path)
@@ -77,8 +81,9 @@ def train_model(train_x, train_y, checkpoint_path=None):
 
 # fit and evaluate a model
 def evaluate_model(model, test_x, test_y):
-    n_steps = test_x.shape[1] / n_length
-    test_x = test_x.reshape((test_x.shape[0], int(n_steps), n_length, test_x.shape[2]))
+    if conv:
+        n_steps = test_x.shape[1] / n_length
+        test_x = test_x.reshape((test_x.shape[0], int(n_steps), n_length, test_x.shape[2]))
     # evaluate model
     # eval_result = model.evaluate(test_x[0][:30].reshape(test_x.shape[0], 30, test_x.shape[2], test_x.shape[3]), test_y, batch_size=1, verbose=0)
     eval_result = model.evaluate(test_x, test_y,
@@ -105,8 +110,8 @@ def run_experiment():
     # shuffle dataset
     x_data, labels = shuffle(x_data, labels)
 
-    trainX, test_X = x_data[:int(x_data.shape[0]*0.8)], x_data[int(x_data.shape[0]*0.8):]
-    trainy, test_y = labels[:int(x_data.shape[0]*0.8)], labels[int(x_data.shape[0]*0.8):]
+    trainX, test_X = x_data[:int(x_data.shape[0]*0.9)], x_data[int(x_data.shape[0]*0.9):]
+    trainy, test_y = labels[:int(x_data.shape[0]*0.9)], labels[int(x_data.shape[0]*0.9):]
 
     if not os.path.exists("models/"):
         createDir("models/")
@@ -116,6 +121,7 @@ def run_experiment():
 
         model = train_model(trainX, trainy, checkpoint_path)
 
+        test_X = test_X[:, :test_timesteps, :]
         score = evaluate_model(model, test_X, test_y)
 
         score = score * 100.0
