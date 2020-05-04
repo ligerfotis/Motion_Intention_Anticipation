@@ -28,6 +28,6 @@ Install requirements:
     pip3 install -r requirements.txt
 
 
-###Running the Code (Python 3.6)
+### Running the Code (Python 3.6)
         
     python model.py
