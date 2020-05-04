@@ -1,10 +1,33 @@
 # Motion Intention Anticipation
 
-### LSTM Model that predicts the class of anticipated human's motion.
+### Description
 
-#####Running the Code (Python 3.6)
+LSTM Model that predicts the class of anticipated human's motion.
 
-Intall requirements from requirements.txt
 
-Run
-    python model.py
+### Python Environment set-up
+Python3
+Install venv for python3 virtual environments: 
+
+    sudo apt install -y python3-venv
+
+Go to project directory: 
+
+    cd transf_chatbot
+
+Create a python virtual environment: 
+
+    python3 -m venv project_env
+
+Activate python: 
+
+    source project_env/bin/activate
+
+Install requirements: 
+
+    pip3 install -r requirements.txt
+
+
+###Running the Code (Python 3.6)
+        
+        python model.py
