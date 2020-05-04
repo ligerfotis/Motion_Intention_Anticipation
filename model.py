@@ -6,11 +6,11 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout, TimeDistributed, Conv1
 from readInput import prepare_dataset, load_files_heracleia, load_files_object_size
 from utils import createDir
 
-conv = False
-summary = True
+conv = False  # True if using 1D conv layers for the input - conv filters through timesteps.
+summary = False  # print models summary
 
-train_timesteps = 4
-test_timesteps = 4
+train_timesteps = 3
+test_timesteps = 3
 
 fold = 5
 
@@ -18,13 +18,13 @@ n_length = 1
 filters_num = 20
 kernel_size = 2
 pooling_size = 2
-rnn_hidden_size = 100
+rnn_hidden_size = 200
 dense_hidden_size = 100
 
-verbose, epochs, batch_size = 0, 1500, 100
+verbose, epochs, batch_size = 0, 300, 200
 
 
-# Define a simple sequential model
+# Definition of the LSTM Model model
 def create_model(n_outputs, n_features, n_length):
     model = tf.keras.Sequential()
     if conv:
@@ -74,12 +74,13 @@ def train_model(train_x, train_y, checkpoint_path=None):
                                                      save_weights_only=True,
                                                      verbose=verbose)
     # fit network
-    model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=[cp_callback], validation_split=1/fold)
+    model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=[cp_callback],
+              validation_split=1 / fold)
 
     return model
 
 
-# fit and evaluate a model
+#  evaluate a model
 def evaluate_model(model, test_x, test_y):
     if conv:
         n_steps = test_x.shape[1] / n_length
@@ -110,14 +111,17 @@ def run_experiment():
     # shuffle dataset
     x_data, labels = shuffle(x_data, labels)
 
-    trainX, test_X = x_data[:int(x_data.shape[0]*0.9)], x_data[int(x_data.shape[0]*0.9):]
-    trainy, test_y = labels[:int(x_data.shape[0]*0.9)], labels[int(x_data.shape[0]*0.9):]
+    # split data to train and test
+    trainX, test_X = x_data[:int(x_data.shape[0] * 0.9)], x_data[int(x_data.shape[0] * 0.9):]
+    trainy, test_y = labels[:int(x_data.shape[0] * 0.9)], labels[int(x_data.shape[0] * 0.9):]
 
+    # create dir of models if not existent
     if not os.path.exists("models/"):
         createDir("models/")
 
+    # train 10 different models
     for r in range(10):
-        checkpoint_path = "models/training_" + str(r+1) + "/cp.ckpt"
+        checkpoint_path = "models/training_" + str(r + 1) + "/cp.ckpt"
 
         model = train_model(trainX, trainy, checkpoint_path)
 
@@ -132,8 +136,8 @@ def run_experiment():
     summarize_results(scores)
 
 
-# run the experiment
 physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 
+# run the experiment
 run_experiment()
