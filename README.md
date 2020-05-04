@@ -31,3 +31,6 @@ Install requirements:
 ### Running the Code (Python 3.6)
         
     python model.py
+
+
+###### Important: Remove Models after each training session, otherwise the code will initialize the new models with the old NN variables 
