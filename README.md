@@ -30,4 +30,4 @@ Install requirements:
 
 ###Running the Code (Python 3.6)
         
-        python model.py
+    python model.py
